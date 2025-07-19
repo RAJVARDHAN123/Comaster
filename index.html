@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard Sync</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;500&display=swap"
+    rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#181825" />
+</head>
+
+<body>
+  <div class="login-card">
+    <h1>Comaster</h1>
+    <input type="text" id="username" placeholder="Enter your name" />
+    <button onclick="login()">Sign In</button>
+
+    <div id="mainUI">
+      <textarea id="textInput" placeholder="Paste text to share" rows="4"></textarea>
+      <div class="dropdown">
+        <button class="dropdown-toggle" onclick="toggleDropdown()" id="dropdownBtn">Select Device</button>
+        <div class="dropdown-menu" id="deviceDropdown"></div>
+      </div>
+      <button id="sd" onclick="sendText()">Send to device</button>
+      <button id="fallbackCopyBtn" onclick="manualCopy()">Click to copy manually</button>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
