@@ -7,6 +7,9 @@
   <title>Comaster</title>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;500&display=swap"
     rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0078bd"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <link rel="stylesheet" href="style.css" />
@@ -14,6 +17,14 @@
 </head>
 
 <body>
+
+  <div class="overlay" id="offlineOverlay">
+    <div class="offline-popup">
+      <h2>You're Offline</h2>
+      <p>Waiting for network connection...</p>
+    </div>
+  </div>
+  
   <div class="login-card">
     <h1>Comaster</h1>
     <input type="text" id="username" placeholder="Enter your name" />
