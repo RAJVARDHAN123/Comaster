@@ -166,3 +166,43 @@ function manualCopy() {
 if (Notification.permission !== "granted") {
   Notification.requestPermission();
 }
+
+ // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').then(reg => {
+          console.log('✅ Service Worker registered:', reg.scope);
+        }).catch(err => {
+          console.error('❌ Service Worker registration failed:', err);
+        });
+      });
+    }
+
+    function checkConnection() {
+      const overlay = document.getElementById('offlineOverlay');
+      function updateStatus() {
+        overlay.style.display = navigator.onLine ? 'none' : 'flex';
+      }
+      window.addEventListener('online', updateStatus);
+      window.addEventListener('offline', updateStatus);
+      updateStatus();
+    }
+    checkConnection();
+
+    navigator.serviceWorker.ready.then(reg => {
+  if ('sync' in reg) {
+    reg.sync.register("clipboard-sync");
+  }
+});
+
+// Optional: save failed text to IndexedDB if offline
+function fallbackClipboardSync(text) {
+  const open = indexedDB.open("ClipboardSync", 1);
+  open.onupgradeneeded = () => open.result.createObjectStore("clipboard-buffer");
+  open.onsuccess = () => {
+    const db = open.result;
+    const tx = db.transaction("clipboard-buffer", "readwrite");
+    const store = tx.objectStore("clipboard-buffer");
+    store.put(text, "pending");
+  };
+}
