@@ -8,82 +8,59 @@ const OFFLINE_FILES = [
   '/icons/icon-512.png'
 ];
 
-// Install service worker and cache core files
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(OFFLINE_FILES))
-  );
+  console.log('[SW] Installed');
 });
 
-// Activate and clean old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))
-    )
-  );
+self.addEventListener('activate', (event) => {
   self.clients.claim();
+  console.log('[SW] Activated');
 });
 
-// Optional: Serve cached files offline
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  );
-});
-
-// ✅ Notification click handler
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientsArr => {
-      // If already open, focus it
-      const appClient = clientsArr.find(client => client.url === '/' && 'focus' in client);
-      if (appClient) return appClient.focus();
-
-      // Otherwise, open a new tab
-      if (clients.openWindow) return clients.openWindow('/');
-    })
-  );
-});
-
-// ✅ Background sync for clipboard
-self.addEventListener('sync', event => {
+self.addEventListener('periodicsync', async (event) => {
   if (event.tag === 'clipboard-sync') {
     event.waitUntil(syncClipboard());
   }
 });
 
 async function syncClipboard() {
-  const dbOpen = indexedDB.open("ClipboardSync", 1);
-  dbOpen.onsuccess = () => {
-    const db = dbOpen.result;
-    const tx = db.transaction("clipboard-buffer", "readonly");
-    const store = tx.objectStore("clipboard-buffer");
-    const getReq = store.get("pending");
-    getReq.onsuccess = async () => {
-      const text = getReq.result;
-      if (!text) return;
-      try {
-        const deviceName = await self.clients.matchAll().then(clientsArr =>
-          clientsArr[0]?.url.includes("username=") ? new URL(clientsArr[0].url).searchParams.get("username") : null
-        );
-        if (!deviceName) return;
+  const cacheKey = 'clipboard-last-value';
+  const username = await getStoredUsername();
 
-        await fetch(`https://comaster-fd3fe-default-rtdb.firebaseio.com/devices/${deviceName}/clipboard.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(text)
-        });
+  if (!username) return;
 
-        // Clear the buffer after success
-        const txDel = db.transaction("clipboard-buffer", "readwrite");
-        txDel.objectStore("clipboard-buffer").delete("pending");
-      } catch (err) {
-        console.error("Sync failed", err);
-      }
-    };
-  };
+  const response = await fetch(`https://comaster-fd3fe-default-rtdb.firebaseio.com/devices/${username}/clipboard.json`);
+  const clipboardText = await response.text();
+
+  const cache = await caches.open('clipboard-cache');
+  const last = await cache.match(cacheKey);
+  const lastValue = last ? await last.text() : null;
+
+  if (clipboardText && clipboardText !== lastValue && clipboardText !== '"') {
+    // Show notification
+    self.registration.showNotification("📋 Clipboard Synced", {
+      body: `Copied: ${clipboardText.replace(/"/g, '')}`,
+      icon: "icons/icon-192.png",
+      badge: "icons/icon-192.png",
+      tag: 'clipboard-notify'
+    });
+
+    // Update stored value
+    await cache.put(cacheKey, new Response(clipboardText));
+  }
 }
+
+async function getStoredUsername() {
+  const cache = await caches.open('clipboard-cache');
+  const match = await cache.match('username');
+  return match ? await match.text() : null;
+}
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SAVE_USERNAME') {
+    caches.open('clipboard-cache').then(cache => {
+      cache.put('username', new Response(event.data.username));
+    });
+  }
+});
