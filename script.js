@@ -175,12 +175,6 @@
     }
     checkConnection();
 
-    navigator.serviceWorker.ready.then(reg => {
-      if ('sync' in reg) {
-        reg.sync.register("clipboard-sync");
-      }
-    });
-
     function fallbackClipboardSync(text) {
       const open = indexedDB.open("ClipboardSync", 1);
       open.onupgradeneeded = () => open.result.createObjectStore("clipboard-buffer");
@@ -191,3 +185,19 @@
         store.put(text, "pending");
       };
     }
+
+    navigator.serviceWorker.ready.then(async (reg) => {
+  if ('periodicSync' in reg) {
+    try {
+      await reg.periodicSync.register('clipboard-sync', {
+        minInterval: 5 * 60 * 1000 // every 5 minutes
+      });
+      console.log('⏱️ Periodic sync registered');
+    } catch (e) {
+      console.error('Periodic sync registration failed', e);
+    }
+  }
+
+  // Save username to service worker for sync context
+  reg.active?.postMessage({ type: 'SAVE_USERNAME', username: localStorage.getItem('username') });
+});
