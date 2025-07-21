@@ -2,9 +2,10 @@
   "name": "Comaster",
   "short_name": "Comaster",
   "start_url": "./",
+  "permissions": ["periodic-background-sync"],
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0078bd",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
     {
@@ -16,6 +17,6 @@
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
-    }
+    }    
   ]
 }
